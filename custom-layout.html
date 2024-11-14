@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Recording Layout</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      height: 100vh;
+    }
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .background-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .camera-overlay {
+      position: absolute;
+      bottom: 2%;
+      left: 2%;
+      width: 150px;
+      height: 150px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .camera-overlay video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <video id="backgroundVideo" autoplay muted></video>
+    <div class="camera-overlay">
+      <video id="cameraVideo" autoplay muted></video>
+    </div>
+  </div>
+</body>
+</html>
