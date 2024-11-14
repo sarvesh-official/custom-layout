@@ -1,104 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Recording Layout</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      height: 100vh;
-    }
-    .container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-    .background-video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .camera-overlay {
-      position: absolute;
-      bottom: 2%;
-      left: 2%;
-      width: 150px;
-      height: 150px;
-      border: 4px solid #fff;
-      border-radius: 50%;
-      overflow: hidden;
-    }
-    .camera-overlay video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  </style>
+    <meta charset="utf-8">
+    <title>Interview Recording Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            position: relative;
+        }
+
+        #screen-share {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #1a1a1a;
+        }
+
+        #participant-video {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        #participant-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Background video for screen sharing -->
-    <video id="backgroundVideo" class="background-video" autoplay muted></video>
+    <div id="screen-share"></div>
+    <div id="participant-video"></div>
 
-    <!-- Circular overlay for the camera video -->
-    <div class="camera-overlay">
-      <video id="cameraVideo" autoplay muted></video>
-    </div>
-  </div>
+    <script>
+        // LiveKit web SDK
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/livekit-client';
+        document.head.appendChild(script);
 
-  <script>
-    // Utility function to get query parameters
-    function getQueryParams() {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        screenTrack: params.get('screenTrack'),
-        cameraTrack: params.get('cameraTrack'),
-      };
-    }
+        script.onload = async () => {
+            // Function to get URL parameters
+            const getUrlParams = () => {
+                const params = new URLSearchParams(window.location.search);
+                return {
+                    url: params.get('url'),
+                    token: params.get('token'),
+                    recordingId: params.get('recording')
+                };
+            };
 
-    // Function to attach a MediaStream to a video element
-    function attachTrackToVideo(trackId, videoElementId) {
-      if (!trackId) {
-        console.error(`Track ID not provided for video element: ${videoElementId}`);
-        return;
-      }
+            const { url, token } = getUrlParams();
+            
+            if (!url || !token) {
+                console.error('Missing required parameters');
+                return;
+            }
 
-      // Simulate attaching tracks (replace with LiveKit API or actual implementation)
-      const videoElement = document.getElementById(videoElementId);
-      if (videoElement) {
-        // Replace this with actual logic to retrieve MediaStreamTrack from LiveKit
-        console.log(`Attaching track ${trackId} to video element ${videoElementId}`);
-        const stream = new MediaStream(); // Replace with LiveKit MediaStream
-        videoElement.srcObject = stream; // Assign the MediaStream
-        videoElement.play(); // Ensure video playback
-      } else {
-        console.error(`Video element with ID ${videoElementId} not found.`);
-      }
-    }
+            try {
+                // Connect to the room
+                const room = new LiveKit.Room();
+                await room.connect(url, token);
 
-    // Main function to initialize the layout
-    function initializeLayout() {
-      const { screenTrack, cameraTrack } = getQueryParams();
+                // Handle participants and their publications
+                room.participants.forEach(handleParticipant);
+                room.on('participantConnected', handleParticipant);
 
-      // Attach screen sharing track to the background video
-      attachTrackToVideo(screenTrack, 'backgroundVideo');
+                function handleParticipant(participant) {
+                    // Handle existing publications
+                    participant.publications.forEach(publication => {
+                        handlePublication(publication, participant);
+                    });
 
-      // Attach camera track to the overlay video
-      attachTrackToVideo(cameraTrack, 'cameraVideo');
-    }
+                    // Handle new publications
+                    participant.on('trackPublished', publication => {
+                        handlePublication(publication, participant);
+                    });
+                }
 
-    // Initialize the layout when the page loads
-    window.onload = initializeLayout;
-  </script>
+                function handlePublication(publication, participant) {
+                    if (publication.isSubscribed) {
+                        handleTrack(publication.track, participant);
+                    }
+
+                    publication.on('subscribed', track => {
+                        handleTrack(track, participant);
+                    });
+                }
+
+                function handleTrack(track, participant) {
+                    const element = track.attach();
+
+                    if (track.source === LiveKit.Track.Source.ScreenShare) {
+                        // Handle screen share
+                        const container = document.getElementById('screen-share');
+                        container.innerHTML = '';
+                        container.appendChild(element);
+                    } else if (track.source === LiveKit.Track.Source.Camera) {
+                        // Handle camera video
+                        const container = document.getElementById('participant-video');
+                        container.innerHTML = '';
+                        container.appendChild(element);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error connecting to LiveKit:', error);
+            }
+        };
+    </script>
 </body>
 </html>
