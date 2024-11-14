@@ -47,10 +47,58 @@
 </head>
 <body>
   <div class="container">
-    <video id="backgroundVideo" autoplay muted></video>
+    <!-- Background video for screen sharing -->
+    <video id="backgroundVideo" class="background-video" autoplay muted></video>
+
+    <!-- Circular overlay for the camera video -->
     <div class="camera-overlay">
       <video id="cameraVideo" autoplay muted></video>
     </div>
   </div>
+
+  <script>
+    // Utility function to get query parameters
+    function getQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        screenTrack: params.get('screenTrack'),
+        cameraTrack: params.get('cameraTrack'),
+      };
+    }
+
+    // Function to attach a MediaStream to a video element
+    function attachTrackToVideo(trackId, videoElementId) {
+      if (!trackId) {
+        console.error(`Track ID not provided for video element: ${videoElementId}`);
+        return;
+      }
+
+      // Simulate attaching tracks (replace with LiveKit API or actual implementation)
+      const videoElement = document.getElementById(videoElementId);
+      if (videoElement) {
+        // Replace this with actual logic to retrieve MediaStreamTrack from LiveKit
+        console.log(`Attaching track ${trackId} to video element ${videoElementId}`);
+        const stream = new MediaStream(); // Replace with LiveKit MediaStream
+        videoElement.srcObject = stream; // Assign the MediaStream
+        videoElement.play(); // Ensure video playback
+      } else {
+        console.error(`Video element with ID ${videoElementId} not found.`);
+      }
+    }
+
+    // Main function to initialize the layout
+    function initializeLayout() {
+      const { screenTrack, cameraTrack } = getQueryParams();
+
+      // Attach screen sharing track to the background video
+      attachTrackToVideo(screenTrack, 'backgroundVideo');
+
+      // Attach camera track to the overlay video
+      attachTrackToVideo(cameraTrack, 'cameraVideo');
+    }
+
+    // Initialize the layout when the page loads
+    window.onload = initializeLayout;
+  </script>
 </body>
 </html>
